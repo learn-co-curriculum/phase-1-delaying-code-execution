@@ -1,89 +1,174 @@
-# The JavaScript DOMContentLoaded Event
+# Delaying Script Execution
 
 ## Learning Goals
 
-- Understand why `DOMContentLoaded` is important
-- Set up an event on `DOMContentLoaded`
+- Explain why delaying execution of JavaScript code is important
+- Use the `defer` attribute to delay execution
+- Use the `DOMContentLoaded` event to delay execution
+- Control timing of code execution using the placement of the script
 
 ## Introduction
 
-An important part of working with JavaScript is ensuring that your code runs at
-the right time. Every now and then, you may have to add some extra code to
-ensure your code doesn't run before the page is ready. Many factors go into
-determining the "right time," but there are two events that represent two
-particularly important milestones in terms of page load:
+One of the things JavaScript enables us to do is to provide dynamic content in
+web pages when the page loads. The page's HTML basically provides a framework
+within which the content will be populated by JavaScript code. In order for this
+to work, however, the HTML "framework" (the DOM) must be fully loaded so that
+the script can access the elements and update their content. Trying to
+manipulate the DOM before the page fully loads can lead to problems.
 
-1. The `DOMContentLoaded` event fires when your page's DOM is fully parsed from
-   the underlying html
-2. The `load` event fires when a resource and all its dependent resources
-   (including CSS and JavaScript) have finished loading
+In this lesson, we'll go over some options for controlling the timing of code
+execution to ensure our code runs correctly.
 
-In this lesson, we'll be focusing on `DOMContentLoaded`.
+## Using the `defer` Attribute
 
-## Why is DOMContentLoaded Important?
+One way of controlling when our code executes is to use the `defer` attribute of
+the HTML `script` tag.
+
+Say we have a script tag in our `index.html` file that looks like this:
+
+```html
+<script type="text/javascript" src="index.js"></script>
+```
+
+Keeping this script from executing until after the DOM is fully loaded is a
+simple matter of adding the `defer` attribute:
+
+```html
+<script defer type="text/javascript" src="index.js"></script>
+```
+
+That's it!
+
+### Seeing `defer` in Action
+
+Take a look at the `index.html` file. You will see that there are two `script`
+tags in the file. The first lists `index.js` as the source file. The second
+contains an inline script.
+
+Now go ahead and open `index.html` in the browser, then open the DevTools. You
+should see the following in the console:
+
+```console
+This console.log() is in the first script tag
+This console.log() is in the second script tag
+```
+
+Each `console.log` is fired when the corresponding line is parsed in the HTML,
+so they are logged in the order in which they appear in the file.
+
+Now add the `defer` attribute to the first script tag:
+
+```html
+<script defer type="text/javascript" src="index.js"></script>
+```
+
+Save the file and refresh the browser page. You should now see the two logs
+reversed. The second log still fires when the line is parsed in `index.html`,
+but the execution of the first log is deferred until after the DOM is completely
+loaded.
+
+## The JavaScript `DOMContentLoaded` Event
+
+The DOM API includes another option for delaying code execution until after the
+DOM is fully loaded: the `DOMContentLoaded` event. Until fairly recently,
+`DOMContentLoaded` was the best option available, and its use is a widely
+accepted standard. As a result, you are likely to see it in existing code.
 
 The `DOMContentLoaded` event is the browser's built-in way to indicate when a
-page's html is loaded into the DOM. It isn't possible to manipulate HTML
-elements that haven't rendered yet, so trying to manipulate the DOM before the
-page fully loads can potentially lead to problems.
-
-We need to make sure to wait until _after_ the `DOMContentLoaded` event is
-triggered to safely execute our code. By creating an event listener, we can keep
-our code from immediately firing when `index.js` is loaded.
-
-## Set Up an Event Listener for DOMContentLoaded
-
-As always, `addEventListener` takes a `String` with the name of the
-event and a _callback function_.
+page's HTML has finished loading into the DOM. It is set up the same way as any
+other event. We call `addEventListener`, passing in the name of the event and a
+callback function:
 
 ```js
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("The DOM has loaded");
+  // JavaScript code we want to run once the DOM is loaded
 });
 ```
 
-If you put the above code in `index.js`, 'The DOM has loaded' will not be logged
-immediately. In fact, you can confirm this yourself by putting a second
-`console.log()` _outside_ of the event listener callback:
+As with any event listener, when the event is "heard", i.e., when the DOM has
+fully loaded, the callback function is executed. The callback contains all the
+JavaScript code we want to run once the DOM finishes loading.
+
+### Seeing `DOMContentLoaded` in Action
+
+Go back to the `index.html` file and make the following two changes:
+
+- Remove the `defer` attribute from the first script.
+- Remove (or comment out) the second script.
+
+Next, delete the `console.log()` that's currently in `index.js` and replace it
+with the following:
 
 ```js
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("The DOM has loaded");
+  console.log("This will log after the DOM loads");
 });
-
+  
 console.log(
   "This console.log() fires when index.js loads - before DOMContentLoaded is triggered"
 );
 ```
 
-## Instructions
+<details><summary><b>What do you expect to see when you refresh the page in the browser?</b></summary>
+    <ul>
+      <li>The second <code>console.log()</code> appears first, and the <code>console.log()</code> inside
+the callback function appears second.</li>
+    </ul>
+</details>
 
-Code your solution in `index.js`. First, set up a `DOMContentLoaded` event
-listener to detect when the HTML page has loaded and the document is ready to be
-manipulated. Use the event's callback function to target the paragraph element
-with `id="text"` and replace the text with "This is really cool!"
+## Using the Placement of the Script Tag
 
-_Note:_ Using the [`innerText`][innertext] property to modify DOM element
-content will not work for this lab. Use [`textContent`][textcontent] or
-[`innerHTML`][innerhtml] instead.
+There are two common approaches used for placing scripts within an HTML
+document: in the `<head>` element or at the end of the `<body>` element.
 
-Test your event in the browser to confirm that it is working.
+Generally speaking, scripts belong more naturally in the `<head>`, since that's
+where other resources are included (for example, links to stylesheets). However,
+as we saw above, HTML is executed synchronously, from top to bottom, so if we
+don't use `defer` or `DOMContentLoaded`, the script will be fetched and executed
+as soon as the parser reaches it. While this is happening, parsing of the HTML
+pauses, causing the page to load more slowly. Futhermore, as we learned above,
+if the script includes DOM manipulation, it may not execute properly.
 
-## DOMContentLoaded Does Not Wait For Stylesheets and Images to Load
+Because of the way the HTML is parsed, moving scripts to the bottom of the
+`<body>` element is another way to solve the problem of code executing too soon.
+With the script at the bottom, parsing of the HTML completes, **then** the
+script is loaded and executed.
 
-It is important to note that the `DOMContentLoaded` event fires once the
-initial HTML document finishes loading, but does not wait for CSS stylesheets or
-images to load. In situations where you need _everything_ to completely load,
-use the `load` event instead.
+Given this, why do we need `defer` or `DOMContentLoaded`?
 
-While both will work, it is often the case that we only need the HTML content to
-fully load in order to execute our JavaScript. Since images can take some time
-to load, using the `load` event means visitors of a webpage may see your webpage
-in its original state for a couple of seconds before any JavaScript fires and
-updates the DOM.
+First, as mentioned above, it allows us to keep our scripts in the head, which
+some people prefer.
 
-For a comparison of the difference between `DOMContentLoaded` and `load`ed
-events, [check out this example][eventexample].
+Second, when the script is included in the `<head>`, there is a performance
+boost: with either `defer` or `DOMContentLoaded`, the script is _loaded_ at the
+same time the HTML is being parsed, but _script execution_ is deferred until
+after the DOM is fully loaded. Because the script is already available when the
+DOM finishes loading, execution begins immediately and doesn't have to wait for
+the script to be loaded.
+
+It's important to note, however, that the improved performance gained from
+including the script in the `<head>` is likely to be undetectable in most
+circumstances. As a result, some people advocate for simply listing scripts at
+the end of the `<body>` element to keep things as simple as possible. See, for
+example, [this article][running-code], which also includes a nice explanation of
+the topics covered in this lesson.
+
+Regardless of which approach you take, it is important to understand the options
+available to you and how these tools function when you see them in existing
+code.
+
+## One Final Point
+
+Note that **none** of the options we've discussed for delaying code execution
+waits for CSS stylesheets or images to load. It is most often the case that we
+only need the HTML content to fully load in order to execute our JavaScript. In
+situations where you need _everything_ to completely load, you will need to use
+the [`load`][load] event instead. Just keep in mind that, since images can take
+some time to load, it may make a noticeable difference in how long it takes the
+page to render fully.
+
+The setup for the `load` event is exactly the same as for `DOMContentLoaded`,
+except that it is called on `Window` rather than `document`.
 
 ## Conclusion
 
@@ -93,32 +178,16 @@ use JavaScript to fill in the content, enabling the possibility of dynamic
 webpages.
 
 This sort of action, however, will only work if the HTML content is loaded on
-the page before the JavaScript is executed. The `DOMContentLoaded` event ensures
-that our JavaScript code is being executed immediately after the HTML is
-finished loading.
-
-## Addendum
-
-The `DOMContentLoaded` event is now a widely accepted standard. Modern web
-development, however, provides us with additional choices for setting up when we
-want our JavaScript to execute. For example, HTML5 now has a [`defer`][defer]
-attribute for use in `<script>` tags:
-
-```html
-<script src="index.js" defer></script>
-```
-
-This functions in a similar way to `DOMContentLoaded`: the JavaScript code
-stored in `index.js` will be loaded up but won't execute until the HTML page
-completely loads.
+the page before the JavaScript is executed. Either the `defer` attribute on the
+`script` tag or the `DOMContentLoaded` event will ensure that our JavaScript
+code is executed as soon as the HTML is finished loading.
 
 ## Resources
 
+- [defer][]
 - [DOMContentLoaded](https://developer.mozilla.org/en-US/docs/Web/Events/DOMContentLoaded)
-- [Running Your Code at the Right Time](https://www.kirupa.com/html5/running_your_code_at_the_right_time.htm)
 
-[eventexample]: http://web.archive.org/web/20150405114023/http://ie.microsoft.com/testdrive/HTML5/DOMContentLoaded/Default.html
 [defer]: https://www.w3schools.com/tags/att_script_defer.asp
-[innertext]: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/innerText
-[textcontent]: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
-[innerhtml]: https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML
+[defer-visualization]: https://html.spec.whatwg.org/images/asyncdefer.svg
+[running-code]: https://www.kirupa.com/html5/running_your_code_at_the_right_time.htm
+[load]: https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event
