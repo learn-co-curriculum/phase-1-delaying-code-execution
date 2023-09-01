@@ -10,11 +10,11 @@
 ## Introduction
 
 One of the things JavaScript enables us to do is to provide dynamic content in
-web pages when the page loads. The page's HTML basically provides a framework
-within which the content will be populated by JavaScript code. In order for this
-to work, however, the HTML "framework" (the DOM) must be fully loaded so that
-the script can access the elements and update their content. Trying to
-manipulate the DOM before the page fully loads can lead to problems.
+web pages when the page loads. The page's HTML provides a framework within which
+the content will be populated by JavaScript code. In order for this to work,
+however, the HTML "framework" (the DOM) must be fully loaded so that the script
+can access the elements and update their content. Trying to manipulate the DOM
+before the page fully loads can lead to problems.
 
 In this lesson, we'll go over some options for controlling the timing of code
 execution to ensure our code runs correctly.
